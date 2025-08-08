@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { DollarSign, TrendingUp, Calendar, Target, FileText } from 'lucide-react'
+import { DollarSign, TrendingUp, Calendar, Target, FileText, AlertTriangle, X } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { format } from 'date-fns'
 
@@ -21,6 +21,8 @@ export default function CostsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('30')
   const [documentsProcessed, setDocumentsProcessed] = useState(0)
   const [documentsData, setDocumentsData] = useState<any[]>([])
+  const [latestApiError, setLatestApiError] = useState<any>(null)
+  const [showApiError, setShowApiError] = useState(true)
 
   const fetchApiUsages = useCallback(async () => {
     try {
@@ -99,6 +101,24 @@ export default function CostsPage() {
       setDocumentsData(documentsData)
       console.log(`Processed ${processedData.length} API usage records from ${documentsData.length} documents`)
       console.log('Cost breakdown:', processedData)
+      
+      // Check for latest document with API errors
+      try {
+        const { data: latestDoc, error: docError } = await supabase
+          .from('cmr_documents')
+          .select('id, filename, api_details, processing_date, status')
+          .not('api_details', 'is', null)
+          .neq('api_details', '{}')
+          .order('processing_date', { ascending: false })
+          .limit(1)
+          .single()
+          
+        if (!docError && latestDoc && latestDoc.api_details && Object.keys(latestDoc.api_details).length > 0) {
+          setLatestApiError(latestDoc)
+        }
+      } catch (err) {
+        console.log('No API errors found in recent documents')
+      }
     } catch (error) {
       console.error('Error fetching cost data from documents:', error)
       setApiUsages([])
@@ -191,13 +211,49 @@ export default function CostsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <DollarSign className="h-8 w-8" />
-          Cost Tracking
-        </h1>
-        <p className="mt-2 text-gray-600">
-          Monitor API usage costs from document processing workflow
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <DollarSign className="h-8 w-8" />
+              Cost Tracking
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Monitor API usage costs from document processing workflow
+            </p>
+          </div>
+          
+          {latestApiError && showApiError && (
+            <div className="ml-6 bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-red-800 font-medium">API Error Detected</h3>
+                    <p className="text-red-700 text-sm mt-1">
+                      Document: {latestApiError.filename || 'Unknown'}
+                    </p>
+                    <p className="text-red-600 text-xs mt-1">
+                      Status: {latestApiError.status || 'Unknown'}
+                    </p>
+                    <div className="mt-3 bg-red-100 rounded p-3 max-h-40 overflow-y-auto">
+                      <p className="text-xs font-mono text-red-800 whitespace-pre-wrap">
+                        {typeof latestApiError.api_details === 'object' 
+                          ? JSON.stringify(latestApiError.api_details, null, 2)
+                          : latestApiError.api_details}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowApiError(false)}
+                  className="ml-3 text-red-600 hover:text-red-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mb-6">

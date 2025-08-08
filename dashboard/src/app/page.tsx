@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Building2, FileText, DollarSign, Activity, AlertCircle } from 'lucide-react'
+import { Building2, FileText, DollarSign, Activity, AlertCircle, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 interface TableInfo {
@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [tables, setTables] = useState<TableInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [latestApiError, setLatestApiError] = useState<any>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -90,6 +91,24 @@ export default function Dashboard() {
         }
 
         setTables(tablesInfo)
+        
+        // Check for latest document with API errors
+        try {
+          const { data: latestDoc, error: docError } = await supabase
+            .from('cmr_documents')
+            .select('id, filename, api_details, processing_date')
+            .not('api_details', 'is', null)
+            .neq('api_details', '{}')
+            .order('processing_date', { ascending: false })
+            .limit(1)
+            .single()
+            
+          if (!docError && latestDoc && latestDoc.api_details && Object.keys(latestDoc.api_details).length > 0) {
+            setLatestApiError(latestDoc)
+          }
+        } catch (err) {
+          console.log('No API errors found in recent documents')
+        }
       } catch (err) {
         console.error('Data fetch failed:', err)
         setError(`Unable to fetch data: ${String(err)}`)
@@ -134,6 +153,32 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+      
+      {latestApiError && (
+        <Link href="/costs" className="block mb-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 hover:bg-yellow-100 transition-colors cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+                <div>
+                  <h3 className="text-yellow-800 font-medium">API Error Detected</h3>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    Document: {latestApiError.filename || 'Unknown'}
+                  </p>
+                  <p className="text-yellow-600 text-xs mt-1">
+                    Click to view error details in Cost Tracking
+                  </p>
+                </div>
+              </div>
+              <div className="text-yellow-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </Link>
       )}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">

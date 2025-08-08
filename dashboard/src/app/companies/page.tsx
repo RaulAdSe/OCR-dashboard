@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Building2, Search, Filter, Eye, Mail, Phone, Globe } from 'lucide-react'
+import { Building2, Search, Filter, Eye, Mail, Phone, Globe, FileText } from 'lucide-react'
 
 interface Company {
   id: string
@@ -13,6 +13,7 @@ interface Company {
   phone?: string
   email?: string
   website?: string
+  tax_id?: string
   created_at: string
 }
 
@@ -50,6 +51,7 @@ export default function CompaniesPage() {
           phone: item.telefono || item.phone || item.Phone || '',
           email: item.correo || item.email || item.Email || '',
           website: item.web || item.website || item.Website || '',
+          tax_id: item.tax_id || item.taxId || item.tax_number || item.nif || item.cif || item.vat_number || item.fiscal_id || '',
           role: item.role || '',
           created_at: item.created_at || item.Created_At || new Date().toISOString(),
           ...item // Include all original fields
@@ -248,6 +250,16 @@ export default function CompaniesPage() {
                         >
                           {selectedCompany.website}
                         </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCompany.tax_id && (
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-gray-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-gray-700">Tax ID</p>
+                        <p className="text-gray-600 font-mono">{selectedCompany.tax_id}</p>
                       </div>
                     </div>
                   )}
