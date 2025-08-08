@@ -1,8 +1,12 @@
 # OCR Dashboard Deployment Guide
 
+## 🎯 **IMPORTANT: Dashboard-Only Deployment**
+
+This guide is for deploying **ONLY the dashboard folder** to Vercel, not the entire project.
+
 ## Local Development Setup
 
-1. **Clone the repository**
+1. **Clone the repository and navigate to dashboard**
    ```bash
    git clone <your-repo-url>
    cd "OCR Kolmai/dashboard"
@@ -18,19 +22,19 @@
    cp .env.example .env.local
    ```
    
-   Edit `.env.local` with your actual values:
-   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
-   - `DATABASE_URL`: Your PostgreSQL connection string
-   - `NEXT_PUBLIC_DASHBOARD_PASSWORD`: Your dashboard access password
+   Edit `.env.local` with your actual values (use your existing values):
+   - `NEXT_PUBLIC_SUPABASE_URL`: https://rkytasgvdzfbqruercsm.supabase.co
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your current key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Your current service key  
+   - `DATABASE_URL`: Your current database URL
+   - `NEXT_PUBLIC_DASHBOARD_PASSWORD`: Your chosen password
 
 4. **Run the development server**
    ```bash
    npm run dev
    ```
 
-## Vercel Deployment
+## Vercel Deployment (Dashboard Only)
 
 ### Prerequisites
 - GitHub repository with your code
@@ -42,21 +46,23 @@
 1. **Connect to Vercel**
    - Go to [vercel.com](https://vercel.com)
    - Import your GitHub repository
-   - Select the `dashboard` folder as root directory
+   - **⚠️ CRITICAL**: Set **Root Directory** to `dashboard` (this deploys only the dashboard folder)
+   - Framework: Next.js (auto-detected)
 
 2. **Environment Variables**
-   Set these in Vercel dashboard under Settings → Environment Variables:
+   In Vercel dashboard under Settings → Environment Variables, add:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-key
-   SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-key
-   DATABASE_URL=postgresql://postgres:password@your-host:5432/postgres
-   NEXT_PUBLIC_DASHBOARD_PASSWORD=your_secure_password
+   NEXT_PUBLIC_SUPABASE_URL=https://rkytasgvdzfbqruercsm.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=[your-actual-key]
+   SUPABASE_SERVICE_ROLE_KEY=[your-actual-service-key]
+   DATABASE_URL=postgresql://postgres:[password]@db.rkytasgvdzfbqruercsm.supabase.co:5432/postgres
+   NEXT_PUBLIC_DASHBOARD_PASSWORD=[your-chosen-password]
    ```
 
 3. **Deploy**
-   - Vercel will automatically build and deploy
+   - Vercel will build and deploy only the dashboard
    - Your dashboard will be live at `https://your-project.vercel.app`
+   - The n8n workflows and database files stay in GitHub but won't be deployed
 
 ### Free Tier Limits
 - **Vercel**: 100GB bandwidth, 1000 function invocations/day
@@ -75,9 +81,18 @@ Run the SQL schema in `database-schema.sql` if needed.
 ## Security Notes
 
 - ✅ Environment variables are properly ignored by git
-- ✅ Secrets are only stored in deployment environment
+- ✅ Secrets are only stored in deployment environment  
 - ✅ Password protection prevents unauthorized access
 - ✅ RLS policies should be configured in Supabase
+
+### GitIgnore Files Explained
+
+There are TWO `.gitignore` files in this project:
+
+1. **Root `.gitignore`** (`/OCR Kolmai/.gitignore`) - Protects the overall project
+2. **Dashboard `.gitignore`** (`/OCR Kolmai/dashboard/.gitignore`) - **This is the important one for Vercel**
+
+When Vercel deploys with Root Directory set to `dashboard`, it uses the dashboard's `.gitignore` file, which properly excludes `.env*` files. Your secrets are safe!
 
 ## Features
 
